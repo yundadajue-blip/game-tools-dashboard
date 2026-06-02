@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>游戏工具渗透率数据看板</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg2: #f8f9fb;
+    --bg3: #f0f2f5;
+    --border: #e8eaee;
+    --border2: #d0d4dc;
+    --text: #1a1d24;
+    --text2: #4a5068;
+    --text3: #9098b0;
+    --ark: #1a6fe8;
+    --ark-dim: rgba(26,111,232,0.08);
+    --zzd: #e8361a;
+    --zzd-dim: rgba(232,54,26,0.08);
+    --baseline: #c87800;
+    --baseline-bg: #fff8ec;
+    --red: #e60000;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans SC', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+  }
+
+  header {
+    padding: 24px 40px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fff;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--ark);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.75)} }
+  .logo-text { font-size: 14px; font-weight: 500; letter-spacing: 0.06em; color: var(--text2); }
+  .header-meta { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text3); }
+
+  nav {
+    padding: 0 40px;
+    border-bottom: 1px solid var(--border);
+    background: #fff;
+    display: flex;
+  }
+  .tab {
+    padding: 13px 20px;
+    font-size: 13px;
+    color: var(--text3);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.18s;
+    letter-spacing: 0.03em;
+    font-weight: 400;
+  }
+  .tab:hover { color: var(--text2); }
+  .tab.active { color: var(--ark); border-bottom-color: var(--ark); font-weight: 500; }
+  .tab.zzd.active { color: var(--zzd); border-bottom-color: var(--zzd); }
+  .tab.ov.active { color: #555; border-bottom-color: #555; }
+
+  main { padding: 28px 40px; background: var(--bg3); min-height: calc(100vh - 130px); }
+  .section { display: none; }
+  .section.active { display: block; }
+
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .kpi {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px 14px;
+    border-top: 3px solid transparent;
+  }
+  .kpi.ark { border-top-color: var(--ark); }
+  .kpi.zzd { border-top-color: var(--zzd); }
+  .kpi.neutral { border-top-color: var(--baseline); }
+  .kpi-label { font-size: 11px; color: var(--text3); letter-spacing: 0.05em; margin-bottom: 8px; font-family: 'DM Mono', monospace; }
+  .kpi-value { font-size: 28px; font-weight: 700; font-family: 'DM Mono', monospace; line-height: 1; }
+  .kpi-value.ark { color: var(--ark); }
+  .kpi-value.zzd { color: var(--zzd); }
+  .kpi-value.neutral { color: var(--baseline); }
+  .kpi-unit { font-size: 14px; font-weight: 400; color: var(--text3); }
+  .kpi-sub { font-size: 11px; color: var(--text3); margin-top: 6px; }
+
+  .section-title {
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    color: var(--text3);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title::after { content:''; flex:1; height:1px; background:var(--border2); }
+
+  .charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+  .chart-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px 10px;
+  }
+  .chart-title {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text2);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .baseline-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--baseline);
+    background: var(--baseline-bg);
+    padding: 2px 7px;
+    border-radius: 4px;
+    border: 1px solid #f0d090;
+  }
+  .chart-wrap { position: relative; height: 140px; }
+  .total-wrap { position: relative; height: 200px; }
+
+  .table-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+  @media(max-width:700px){ .table-grid{ grid-template-columns:1fr; } }
+
+  .table-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .table-head {
+    padding: 12px 18px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg2);
+  }
+  .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+  .dot.ark { background: var(--ark); }
+  .dot.zzd { background: var(--zzd); }
+
+  table { width: 100%; border-collapse: collapse; }
+  td, th { padding: 9px 18px; font-size: 12px; text-align: left; }
+  th { color: var(--text3); font-weight: 400; font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.04em; border-bottom: 1px solid var(--border); background: var(--bg2); }
+  td { color: var(--text2); border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  tr:nth-child(even) td { background: #fafbfc; }
+  tr.total td { color: var(--text); font-weight: 500; background: #f4f6fa; }
+  td.bv { color: var(--red); font-weight: 500; font-family: 'DM Mono', monospace; }
+  tr.total td.bv { color: var(--red); }
+
+  .monthly-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 28px;
+  }
+  .monthly-card .table-head { font-size: 13px; }
+  td.mv { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text2); text-align: right; }
+  th.mth { text-align: right; }
+
+  .total-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px 10px;
+    margin-bottom: 14px;
+  }
+
+  footer {
+    padding: 16px 40px;
+    border-top: 1px solid var(--border);
+    background: #fff;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text3);
+    display: flex;
+    justify-content: space-between;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    <span class="logo-text">游戏工具渗透率看板</span>
+  </div>
+  <div class="header-meta">数据周期：2026-01 → 2026-05 &nbsp;|&nbsp; 基准线方法：中位数</div>
+</header>
+
+<nav>
+  <div class="tab active" onclick="switchTab('ark',this)">明日方舟</div>
+  <div class="tab zzd" onclick="switchTab('zzd',this)">终末地</div>
+  <div class="tab ov" onclick="switchTab('overview',this)">总览对比</div>
+</nav>
+
+<main>
+
+<!-- ══ 明日方舟 ══ -->
+<div class="section active" id="sec-ark">
+  <div class="kpi-row">
+    <div class="kpi ark">
+      <div class="kpi-label">工具总计 · 日基准线</div>
+      <div class="kpi-value ark">24.28<span class="kpi-unit">%</span></div>
+      <div class="kpi-sub">5月日维度中位数</div>
+    </div>
+    <div class="kpi ark">
+      <div class="kpi-label">工具总计 · 周基准线</div>
+      <div class="kpi-value ark">19.66<span class="kpi-unit">%</span></div>
+      <div class="kpi-sub">5.4–5.31 四周中位数</div>
+    </div>
+    <div class="kpi neutral">
+      <div class="kpi-label">工具总计 · 月基准线</div>
+      <div class="kpi-value neutral">24.43<span class="kpi-unit">%</span></div>
+      <div class="kpi-sub">1–5月中位数（含肉鸽战绩）</div>
+    </div>
+    <div class="kpi ark">
+      <div class="kpi-label">核心工具 · 方舟数据页</div>
+      <div class="kpi-value ark">11.09<span class="kpi-unit">%</span></div>
+      <div class="kpi-sub">日基准线，占比最高</div>
+    </div>
+  </div>
+
+  <div class="section-title">日渗透率曲线 · 各工具（5月）</div>
+  <div class="charts-grid" id="ark-charts"></div>
+
+  <div class="section-title">基准线汇总</div>
+  <div class="table-grid">
+    <div class="table-card">
+      <div class="table-head"><span class="dot ark"></span>日基准线（5月中位数）</div>
+      <table>
+        <tr><th>工具</th><th style="text-align:right">日基准线(%)</th></tr>
+        <tr><td>方舟数据页</td><td class="bv" style="text-align:right">11.09</td></tr>
+        <tr><td>公招计算器</td><td class="bv" style="text-align:right">5.23</td></tr>
+        <tr><td>干员图鉴</td><td class="bv" style="text-align:right">4.17</td></tr>
+        <tr><td>肉鸽战绩</td><td class="bv" style="text-align:right">1.88</td></tr>
+        <tr><td>养成计算器</td><td class="bv" style="text-align:right">0.74</td></tr>
+        <tr><td>助战检索</td><td class="bv" style="text-align:right">0.60</td></tr>
+        <tr><td>机制 wiki</td><td class="bv" style="text-align:right">0.09</td></tr>
+        <tr class="total"><td>工具总计</td><td class="bv" style="text-align:right">24.28</td></tr>
+      </table>
+    </div>
+    <div class="table-card">
+      <div class="table-head"><span class="dot ark"></span>周基准线 / 月基准线</div>
+      <table>
+        <tr><th>工具</th><th class="mth">周基准线(%)</th><th class="mth">月基准线(%)</th></tr>
+        <tr><td>方舟数据页</td><td class="bv" style="text-align:right">9.22</td><td class="bv" style="text-align:right">11.63</td></tr>
+        <tr><td>公招计算器</td><td class="bv" style="text-align:right">4.70</td><td class="bv" style="text-align:right">4.93</td></tr>
+        <tr><td>干员图鉴</td><td class="bv" style="text-align:right">2.95</td><td class="bv" style="text-align:right">2.96</td></tr>
+        <tr><td>肉鸽战绩</td><td class="bv" style="text-align:right">1.76</td><td class="bv" style="text-align:right">1.85</td></tr>
+        <tr><td>养成计算器</td><td class="bv" style="text-align:right">0.42</td><td class="bv" style="text-align:right">0.49</td></tr>
+        <tr><td>助战检索</td><td class="bv" style="text-align:right">0.53</td><td class="bv" style="text-align:right">0.58</td></tr>
+        <tr><td>机制 wiki</td><td class="bv" style="text-align:right">0.07</td><td class="bv" style="text-align:right">0.09</td></tr>
+        <tr class="total"><td>工具总计</td><td class="bv" style="text-align:right">19.66</td><td class="bv" style="text-align:right">24.43</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="section-title">月维度渗透率明细</div>
+  <div class="monthly-card">
+    <div class="table-head">明日方舟 月度渗透率明细</div>
+    <table>
+      <tr><th>工具</th><th class="mth">1月(%)</th><th class="mth">2月(%)</th><th class="mth">3月(%)</th><th class="mth">4月(%)</th><th class="mth">5月(%)</th><th class="mth" style="color:var(--red)">月基准线(%)</th></tr>
+      <tr><td>方舟数据页</td><td class="mv">13.20</td><td class="mv">12.50</td><td class="mv">9.40</td><td class="mv">9.60</td><td class="mv">11.63</td><td class="mv" style="color:var(--red);font-weight:500">11.63</td></tr>
+      <tr><td>公招计算器</td><td class="mv">5.51</td><td class="mv">4.67</td><td class="mv">4.72</td><td class="mv">4.93</td><td class="mv">5.06</td><td class="mv" style="color:var(--red);font-weight:500">4.93</td></tr>
+      <tr><td>干员图鉴</td><td class="mv">2.96</td><td class="mv">3.60</td><td class="mv">2.86</td><td class="mv">2.89</td><td class="mv">4.21</td><td class="mv" style="color:var(--red);font-weight:500">2.96</td></tr>
+      <tr><td>肉鸽战绩</td><td class="mv">2.63</td><td class="mv">2.11</td><td class="mv">1.60</td><td class="mv">0.94</td><td class="mv">1.85</td><td class="mv" style="color:var(--red);font-weight:500">1.85</td></tr>
+      <tr><td>养成计算器</td><td class="mv">0.49</td><td class="mv">0.85</td><td class="mv">0.43</td><td class="mv">0.45</td><td class="mv">0.95</td><td class="mv" style="color:var(--red);font-weight:500">0.49</td></tr>
+      <tr><td>助战检索</td><td class="mv">0.41</td><td class="mv">0.58</td><td class="mv">0.63</td><td class="mv">0.49</td><td class="mv">0.63</td><td class="mv" style="color:var(--red);font-weight:500">0.58</td></tr>
+      <tr><td>机制 wiki</td><td class="mv">0.06</td><td class="mv">0.12</td><td class="mv">0.08</td><td class="mv">0.09</td><td class="mv">0.11</td><td class="mv" style="color:var(--red);font-weight:500">0.09</td></tr>
+      <tr class="total"><td>工具总计</td><td class="mv">25.26</td><td class="mv">24.43</td><td class="mv">19.72</td><td class="mv">19.39</td><td class="mv">24.44</td><td class="mv" style="color:var(--red);font-weight:500">24.43</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ══ 终末地 ══ -->
+<div class="section" id="sec-zzd">
+  <div class="kpi-row">
+    <div class="kpi zzd">
+      <div class="kpi-label">工具总计 · 日基准线</div>
+      <div class="kpi-value zzd">18.93<span class="kpi-unit">%</span></div>
+      <div class="kpi-sub">5月日维度中位数</div>
+    </div>
+    <div class="kpi zzd">
+      <div class="kpi-label">工具总计 · 周基准线</div>
+      <div class="kpi-value zzd">17.39<span class="kpi-unit">%</span></div>
+      <div class="kpi-sub">5.4–5.31 四周中位数</div>
+    </div>
+    <div class="kpi zzd">
+      <div class="kpi-label">核心工具 · 终末地数据页</div>
+      <div class="kpi-value zzd">11.07<span class="kpi-unit">%</span></div>
+      <div class="kpi-sub">日基准线，占比最高</div>
+    </div>
+  </div>
+
+  <div class="section-title">日渗透率曲线 · 各工具（5月）</div>
+  <div class="charts-grid" id="zzd-charts"></div>
+
+  <div class="section-title">基准线汇总</div>
+  <div class="table-grid">
+    <div class="table-card">
+      <div class="table-head"><span class="dot zzd"></span>日基准线（5月中位数）</div>
+      <table>
+        <tr><th>工具</th><th style="text-align:right">日基准线(%)</th></tr>
+        <tr><td>终末地数据页</td><td class="bv" style="text-align:right">11.07</td></tr>
+        <tr><td>配队推荐</td><td class="bv" style="text-align:right">2.88</td></tr>
+        <tr><td>养成建议</td><td class="bv" style="text-align:right">2.10</td></tr>
+        <tr><td>wiki</td><td class="bv" style="text-align:right">1.15</td></tr>
+        <tr><td>大地图</td><td class="bv" style="text-align:right">1.00</td></tr>
+        <tr class="total"><td>工具总计</td><td class="bv" style="text-align:right">18.93</td></tr>
+      </table>
+    </div>
+    <div class="table-card">
+      <div class="table-head"><span class="dot zzd"></span>周基准线</div>
+      <table>
+        <tr><th>工具</th><th style="text-align:right">周基准线(%)</th></tr>
+        <tr><td>终末地数据页</td><td class="bv" style="text-align:right">12.07</td></tr>
+        <tr><td>配队推荐</td><td class="bv" style="text-align:right">1.68</td></tr>
+        <tr><td>养成建议</td><td class="bv" style="text-align:right">1.18</td></tr>
+        <tr><td>wiki</td><td class="bv" style="text-align:right">1.31</td></tr>
+        <tr><td>大地图</td><td class="bv" style="text-align:right">1.15</td></tr>
+        <tr class="total"><td>工具总计</td><td class="bv" style="text-align:right">17.39</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 总览 ══ -->
+<div class="section" id="sec-overview">
+  <div class="kpi-row">
+    <div class="kpi ark">
+      <div class="kpi-label">明日方舟 · 工具总计日基准</div>
+      <div class="kpi-value ark">24.28<span class="kpi-unit">%</span></div>
+    </div>
+    <div class="kpi zzd">
+      <div class="kpi-label">终末地 · 工具总计日基准</div>
+      <div class="kpi-value zzd">18.93<span class="kpi-unit">%</span></div>
+    </div>
+    <div class="kpi ark">
+      <div class="kpi-label">明日方舟 · 月基准线</div>
+      <div class="kpi-value ark">24.43<span class="kpi-unit">%</span></div>
+    </div>
+    <div class="kpi zzd">
+      <div class="kpi-label">终末地 · 周基准线</div>
+      <div class="kpi-value zzd">17.39<span class="kpi-unit">%</span></div>
+    </div>
+  </div>
+
+  <div class="section-title">工具总计日渗透率对比（5月）</div>
+  <div class="total-card">
+    <div class="chart-title">两款游戏工具总计日渗透率走势</div>
+    <div class="total-wrap"><canvas id="totalChart"></canvas></div>
+  </div>
+
+  <div class="section-title">三维基准线横向对比</div>
+  <div class="table-grid">
+    <div class="total-card" style="margin-bottom:0">
+      <div class="chart-title">核心数据页日渗透率对比</div>
+      <div class="total-wrap"><canvas id="dataPageChart"></canvas></div>
+    </div>
+    <div class="table-card">
+      <div class="table-head">基准线横向对比</div>
+      <table>
+        <tr><th>维度</th><th style="text-align:right;color:var(--ark)">明日方舟(%)</th><th style="text-align:right;color:var(--zzd)">终末地(%)</th></tr>
+        <tr><td>日基准线</td><td class="bv" style="text-align:right;color:var(--ark)">24.28</td><td class="bv" style="text-align:right;color:var(--zzd)">18.93</td></tr>
+        <tr><td>周基准线</td><td class="bv" style="text-align:right;color:var(--ark)">19.66</td><td class="bv" style="text-align:right;color:var(--zzd)">17.39</td></tr>
+        <tr class="total"><td>月基准线</td><td class="bv" style="text-align:right;color:var(--ark)">24.43</td><td class="bv" style="text-align:right;color:var(--zzd)">—</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<footer>
+  <span>数据来源：明日方舟 & 终末地版区页 DAU + 各工具 UV / 设备数</span>
+  <span>最后更新：2026-06-02 &nbsp;·&nbsp; 渗透率 = 工具UV ÷ 版区DAU × 100</span>
+</footer>
+
+<script>
+const LABELS=['5/1','5/2','5/3','5/4','5/5','5/6','5/7','5/8','5/9','5/10','5/11','5/12','5/13','5/14','5/15','5/16','5/17','5/18','5/19','5/20','5/21','5/22','5/23','5/24','5/25','5/26','5/27','5/28','5/29','5/30','5/31'];
+
+const ARK_TOOLS=[
+  {name:'方舟数据页',baseline:11.09,data:[22.81,17.39,15.89,15.08,14.42,13.45,12.69,11.74,12.47,11.92,12.02,11.56,11.36,11.69,11.09,11.88,10.47,10.22,9.96,9.16,8.55,8.62,8.9,9.14,9.13,9.13,8.91,8.82,8.81,9.2,10.5]},
+  {name:'公招计算器',baseline:5.23,data:[5.36,5.6,5.53,5.73,5.79,5.5,5.45,5.28,5.23,5.49,5.38,5.57,5.63,5.67,4.97,4.64,4.75,4.02,4.43,4.24,4.31,4.25,4.41,4.67,4.91,4.95,5.17,5.03,4.83,5.28,5.57]},
+  {name:'干员图鉴',baseline:4.17,data:[9.02,7.52,6.13,5.7,5.13,5.06,5.01,4.57,4.46,4.26,4.37,4.28,4.27,5.68,5.08,4.04,3.43,3.51,3.49,2.68,2.69,2.51,2.64,2.48,2.53,4.17,2.85,2.74,3.08,2.68,3.0]},
+  {name:'肉鸽战绩',baseline:1.88,data:[1.15,1.45,1.77,1.91,1.9,1.99,2.13,2.0,2.2,2.19,2.3,2.35,2.4,2.19,1.88,1.78,1.86,1.61,1.73,1.72,1.8,1.52,1.54,1.66,1.77,1.73,1.88,1.9,1.76,1.93,2.16]},
+  {name:'养成计算器',baseline:0.74,data:[2.31,2.48,2.13,1.83,1.74,1.44,1.26,1.18,1.24,1.27,1.09,1.05,1.03,1.0,0.82,0.74,0.67,0.49,0.49,0.43,0.38,0.37,0.4,0.42,0.35,0.39,0.37,0.36,0.37,0.46,0.5]},
+  {name:'助战检索',baseline:0.6,data:[0.58,0.83,0.83,0.77,0.68,0.57,0.56,0.57,0.65,0.7,0.6,0.66,0.61,0.55,0.85,1.1,0.89,0.52,0.53,0.48,0.46,0.47,0.65,0.64,0.53,0.5,0.49,0.47,0.48,0.65,0.64]},
+  {name:'机制 wiki',baseline:0.09,data:[0.228,0.218,0.198,0.189,0.18,0.144,0.141,0.137,0.14,0.149,0.133,0.122,0.122,0.122,0.085,0.094,0.087,0.072,0.081,0.069,0.063,0.055,0.066,0.065,0.064,0.067,0.059,0.063,0.069,0.071,0.079]},
+];
+
+const ZZD_TOOLS=[
+  {name:'终末地数据页',baseline:11.07,data:[12.58,12.2,12.08,11.91,11.35,10.8,10.47,10.85,11.13,11.14,10.9,10.64,10.22,11.11,10.94,11.07,10.86,10.19,11.54,18.77,18.26,12.58,11.83,11.81,11.29,10.81,10.52,10.03,9.98,10.51,10.63]},
+  {name:'配队推荐',baseline:2.88,data:[3.22,3.38,3.45,3.28,3.15,2.6,2.57,3.45,3.77,4.09,3.06,2.88,2.69,3.68,3.61,4.33,4.12,2.77,2.77,2.85,2.63,2.73,3.61,3.53,2.62,2.43,2.25,2.12,2.23,2.86,2.81]},
+  {name:'养成建议',baseline:2.1,data:[2.26,2.42,2.45,2.3,2.13,1.82,1.8,2.39,2.68,2.93,2.23,2.06,1.96,2.43,2.4,2.9,2.76,1.93,1.89,2.07,1.91,1.98,2.65,2.58,1.94,1.76,1.68,1.54,1.63,2.1,2.09]},
+  {name:'wiki',baseline:1.15,data:[0.83,0.85,0.88,0.86,0.9,0.84,0.79,1.11,1.21,1.15,1.04,0.96,0.91,2.72,5.61,3.22,1.47,1.17,1.13,1.24,1.1,1.6,1.97,1.67,1.44,1.25,1.19,1.08,1.09,1.22,1.18]},
+  {name:'大地图',baseline:1.0,data:[0.8,0.87,0.96,0.88,0.82,0.7,0.66,0.67,1.11,1.23,0.94,0.94,0.89,3.26,6.03,3.64,2.01,1.29,1.6,1.39,1.24,1.11,1.39,1.33,1.0,0.97,0.89,0.86,0.88,1.1,1.13]},
+];
+
+const ARK_TOTAL=[41.46,35.49,32.48,31.21,29.85,28.14,27.24,25.47,26.39,25.97,25.88,25.59,25.43,26.9,24.78,24.28,22.15,20.45,20.71,18.77,18.24,17.79,18.62,19.07,19.29,20.94,19.73,19.39,19.41,20.28,22.45];
+const ZZD_TOTAL=[19.69,19.72,19.83,19.23,18.35,16.75,16.29,18.46,19.9,20.55,18.16,17.48,16.68,23.2,28.6,25.15,21.23,17.35,18.93,26.31,25.13,20.0,21.45,20.92,18.3,17.21,16.53,15.62,15.8,17.78,17.83];
+
+const baselineLabelPlugin={
+  id:'baselineLabel',
+  afterDraw(chart){
+    const ds=chart.data.datasets[1];
+    if(!ds)return;
+    const meta=chart.getDatasetMeta(1);
+    if(!meta.data.length)return;
+    const ctx=chart.ctx;
+    const pt=meta.data[meta.data.length-1];
+    ctx.save();
+    ctx.font='bold 10px DM Mono,monospace';
+    ctx.fillStyle='#c87800';
+    ctx.textAlign='left';
+    ctx.textBaseline='middle';
+    ctx.fillText(ds.data[0].toFixed(2)+'%',pt.x+4,pt.y);
+    ctx.restore();
+  }
+};
+
+function makeSmallChart(id,data,baseline,color){
+  const vals=data.concat([baseline]);
+  const range=Math.max(...vals)-Math.min(...vals);
+  const minV=Math.max(0,Math.min(...vals)-range*0.15);
+  const maxV=Math.max(...vals)+range*0.15;
+  new Chart(document.getElementById(id),{
+    type:'line',plugins:[baselineLabelPlugin],
+    data:{labels:LABELS,datasets:[
+      {data,borderColor:color,backgroundColor:color+'18',borderWidth:1.5,pointRadius:0,tension:0.3,fill:false},
+      {data:Array(31).fill(baseline),borderColor:'#c87800',borderWidth:1,borderDash:[5,4],pointRadius:0,tension:0,fill:false}
+    ]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      layout:{padding:{right:40}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y.toFixed(2)+'%'}}},
+      scales:{
+        x:{ticks:{color:'#9098b0',font:{size:9},maxRotation:0,autoSkip:true,maxTicksLimit:8},grid:{color:'#f0f2f5'}},
+        y:{min:parseFloat(minV.toFixed(2)),max:parseFloat(maxV.toFixed(2)),ticks:{color:'#9098b0',font:{size:9},callback:v=>v.toFixed(1)+'%'},grid:{color:'#f0f2f5'}}
+      }
+    }
+  });
+}
+
+function buildToolCharts(containerId,tools,color){
+  const container=document.getElementById(containerId);
+  tools.forEach((t,i)=>{
+    const id=containerId+'_c'+i;
+    const card=document.createElement('div');
+    card.className='chart-card';
+    card.innerHTML=`<div class="chart-title">${t.name}<span class="baseline-badge">${t.baseline}%</span></div><div class="chart-wrap"><canvas id="${id}"></canvas></div>`;
+    container.appendChild(card);
+    setTimeout(()=>makeSmallChart(id,t.data,t.baseline,color),50);
+  });
+}
+
+function makeTotalChart(id,datasets){
+  new Chart(document.getElementById(id),{
+    type:'line',
+    data:{labels:LABELS,datasets:[
+      ...datasets.map(d=>({label:d.label,data:d.data,borderColor:d.color,backgroundColor:d.color+'12',borderWidth:2,pointRadius:2,tension:0.3,fill:false})),
+      ...datasets.map(d=>({label:d.label+' 基准线',data:Array(31).fill(d.baseline),borderColor:'#c87800',borderWidth:1,borderDash:[6,4],pointRadius:0,tension:0,fill:false}))
+    ]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#4a5068',font:{size:11},boxWidth:12}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.parsed.y.toFixed(2)+'%'}}},
+      scales:{
+        x:{ticks:{color:'#9098b0',font:{size:10},maxRotation:0,autoSkip:true,maxTicksLimit:10},grid:{color:'#f0f2f5'}},
+        y:{ticks:{color:'#9098b0',font:{size:10},callback:v=>v.toFixed(0)+'%'},grid:{color:'#f0f2f5'}}
+      }
+    }
+  });
+}
+
+buildToolCharts('ark-charts',ARK_TOOLS,'#1a6fe8');
+buildToolCharts('zzd-charts',ZZD_TOOLS,'#e8361a');
+
+setTimeout(()=>{
+  makeTotalChart('totalChart',[
+    {label:'明日方舟',data:ARK_TOTAL,color:'#1a6fe8',baseline:24.28},
+    {label:'终末地',data:ZZD_TOTAL,color:'#e8361a',baseline:18.93},
+  ]);
+  makeTotalChart('dataPageChart',[
+    {label:'方舟数据页',data:ARK_TOOLS[0].data,color:'#1a6fe8',baseline:ARK_TOOLS[0].baseline},
+    {label:'终末地数据页',data:ZZD_TOOLS[0].data,color:'#e8361a',baseline:ZZD_TOOLS[0].baseline},
+  ]);
+},100);
+
+function switchTab(id,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('sec-'+id).classList.add('active');
+}
+</script>
+</body>
+</html>
