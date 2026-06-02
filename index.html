@@ -223,7 +223,7 @@
     <div class="logo-dot"></div>
     <span class="logo-text">游戏工具渗透率看板</span>
   </div>
-  <div class="header-meta">数据周期：2026-01 → 2026-05 &nbsp;|&nbsp; 基准线方法：中位数</div>
+  <div class="header-meta">数据周期：2026-01 → 2026-05 &nbsp;|&nbsp; 基准线方法：中���数</div>
 </header>
 
 <nav>
@@ -329,6 +329,11 @@
       <div class="kpi-value zzd">11.07<span class="kpi-unit">%</span></div>
       <div class="kpi-sub">日基准线，占比最高</div>
     </div>
+    <div class="kpi neutral">
+      <div class="kpi-label">工具总计 · 月基准线</div>
+      <div class="kpi-value neutral">28.63<span class="kpi-unit">%</span></div>
+      <div class="kpi-sub">1–5月中位数</div>
+    </div>
   </div>
 
   <div class="section-title">日渗透率曲线 · 各工具（5月）</div>
@@ -349,17 +354,31 @@
       </table>
     </div>
     <div class="table-card">
-      <div class="table-head"><span class="dot zzd"></span>周基准线</div>
+      <div class="table-head"><span class="dot zzd"></span>周基准线 / 月基准线</div>
       <table>
-        <tr><th>工具</th><th style="text-align:right">周基准线(%)</th></tr>
-        <tr><td>终末地数据页</td><td class="bv" style="text-align:right">12.07</td></tr>
-        <tr><td>配队推荐</td><td class="bv" style="text-align:right">1.68</td></tr>
-        <tr><td>养成建议</td><td class="bv" style="text-align:right">1.18</td></tr>
-        <tr><td>wiki</td><td class="bv" style="text-align:right">1.31</td></tr>
-        <tr><td>大地图</td><td class="bv" style="text-align:right">1.15</td></tr>
-        <tr class="total"><td>工具总计</td><td class="bv" style="text-align:right">17.39</td></tr>
+        <tr><th>工具</th><th class="mth">周基准线(%)</th><th class="mth">月基准线(%)</th></tr>
+        <tr><td>终末地数据页</td><td class="bv" style="text-align:right">12.07</td><td class="bv" style="text-align:right">16.48</td></tr>
+        <tr><td>配队推荐</td><td class="bv" style="text-align:right">1.68</td><td class="bv" style="text-align:right">5.10</td></tr>
+        <tr><td>养成建议</td><td class="bv" style="text-align:right">1.18</td><td class="bv" style="text-align:right">3.83</td></tr>
+        <tr><td>wiki</td><td class="bv" style="text-align:right">1.31</td><td class="bv" style="text-align:right">1.75</td></tr>
+        <tr><td>大地图</td><td class="bv" style="text-align:right">1.15</td><td class="bv" style="text-align:right">1.47</td></tr>
+        <tr class="total"><td>工具总计</td><td class="bv" style="text-align:right">17.39</td><td class="bv" style="text-align:right">28.63</td></tr>
       </table>
     </div>
+  </div>
+
+  <div class="section-title">月维度渗透率明细</div>
+  <div class="monthly-card">
+    <div class="table-head">终末地 月度渗透率明细</div>
+    <table>
+      <tr><th>工具</th><th class="mth">1月(%)</th><th class="mth">2月(%)</th><th class="mth">3月(%)</th><th class="mth">4月(%)</th><th class="mth">5月(%)</th><th class="mth" style="color:var(--red)">月基准线(%)</th></tr>
+      <tr><td>终末地数据页</td><td class="mv">19.00</td><td class="mv">17.87</td><td class="mv">16.48</td><td class="mv">13.63</td><td class="mv">11.63</td><td class="mv" style="color:var(--red);font-weight:500">16.48</td></tr>
+      <tr><td>配队推荐</td><td class="mv">19.09</td><td class="mv">10.78</td><td class="mv">5.10</td><td class="mv">4.44</td><td class="mv">3.10</td><td class="mv" style="color:var(--red);font-weight:500">5.10</td></tr>
+      <tr><td>养成建议</td><td class="mv">13.38</td><td class="mv">7.99</td><td class="mv">3.83</td><td class="mv">3.17</td><td class="mv">2.20</td><td class="mv" style="color:var(--red);font-weight:500">3.83</td></tr>
+      <tr><td>wiki</td><td class="mv">3.12</td><td class="mv">2.54</td><td class="mv">1.75</td><td class="mv">1.44</td><td class="mv">1.41</td><td class="mv" style="color:var(--red);font-weight:500">1.75</td></tr>
+      <tr><td>大地图</td><td class="mv">5.92</td><td class="mv">3.10</td><td class="mv">1.47</td><td class="mv">1.06</td><td class="mv">1.38</td><td class="mv" style="color:var(--red);font-weight:500">1.47</td></tr>
+      <tr class="total"><td>工具总计</td><td class="mv">60.51</td><td class="mv">42.28</td><td class="mv">28.63</td><td class="mv">23.74</td><td class="mv">19.72</td><td class="mv" style="color:var(--red);font-weight:500">28.63</td></tr>
+    </table>
   </div>
 </div>
 
@@ -402,7 +421,7 @@
         <tr><th>维度</th><th style="text-align:right;color:var(--ark)">明日方舟(%)</th><th style="text-align:right;color:var(--zzd)">终末地(%)</th></tr>
         <tr><td>日基准线</td><td class="bv" style="text-align:right;color:var(--ark)">24.28</td><td class="bv" style="text-align:right;color:var(--zzd)">18.93</td></tr>
         <tr><td>周基准线</td><td class="bv" style="text-align:right;color:var(--ark)">19.66</td><td class="bv" style="text-align:right;color:var(--zzd)">17.39</td></tr>
-        <tr class="total"><td>月基准线</td><td class="bv" style="text-align:right;color:var(--ark)">24.43</td><td class="bv" style="text-align:right;color:var(--zzd)">—</td></tr>
+        <tr class="total"><td>月基准线</td><td class="bv" style="text-align:right;color:var(--ark)">24.43</td><td class="bv" style="text-align:right;color:var(--zzd)">28.63</td></tr>
       </table>
     </div>
   </div>
